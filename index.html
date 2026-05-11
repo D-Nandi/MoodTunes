@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MoodTunes — Discover music that matches your mood.">
+    <title>MoodTunes — Music for Every Mood</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ═══════════ NAVBAR ═══════════ -->
+    <nav id="navbar">
+        <div class="navbar-inner">
+            <a href="#" class="logo" id="logo-link">
+                <span class="logo-icon">♪</span>
+                MoodTunes
+            </a>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#" class="nav-link" data-nav="home" id="nav-home">Home</a></li>
+                <li><a href="#" class="nav-link" data-nav="moods" id="nav-moods">Moods</a></li>
+                <li><a href="#" class="nav-link" data-nav="discover" id="nav-discover">Discover</a></li>
+                <li><a href="#" class="nav-link" data-nav="favourites" id="nav-favourites">Favourites</a></li>
+            </ul>
+            <div class="navbar-right" id="navbar-right">
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════ SCREEN 1: LANGUAGE ═══════════ -->
+    <section id="screen-language" class="screen active">
+
+        <!-- Cinematic Background Video -->
+        <div class="hero-video-wrap">
+            <video autoplay muted loop playsinline class="hero-video">
+                <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4" type="video/mp4">
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+
+        <!-- Floating Orbs -->
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-cyan"></div>
+
+        <!-- Hero Content -->
+        <div class="hero-content fade-in">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                AI music experience — <span class="hero-badge-highlight">available now</span>
+            </div>
+
+            <h1 class="hero-heading">Music That<br><em>Understands</em><br>Your Mood</h1>
+
+            <p class="hero-subtitle">
+                Discover songs that match your emotions instantly.<br>
+                MoodTunes uses AI to recommend music based on how you feel.
+            </p>
+
+            <!-- Waveform SVG -->
+            <div class="waveform-wrap">
+                <svg class="waveform" viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg">
+                    <rect class="wv" x="0"   y="15" width="4" height="10" rx="2"/>
+                    <rect class="wv" x="8"   y="10" width="4" height="20" rx="2"/>
+                    <rect class="wv" x="16"  y="5"  width="4" height="30" rx="2"/>
+                    <rect class="wv" x="24"  y="12" width="4" height="16" rx="2"/>
+                    <rect class="wv" x="32"  y="8"  width="4" height="24" rx="2"/>
+                    <rect class="wv" x="40"  y="14" width="4" height="12" rx="2"/>
+                    <rect class="wv" x="48"  y="6"  width="4" height="28" rx="2"/>
+                    <rect class="wv" x="56"  y="11" width="4" height="18" rx="2"/>
+                    <rect class="wv" x="64"  y="4"  width="4" height="32" rx="2"/>
+                    <rect class="wv" x="72"  y="13" width="4" height="14" rx="2"/>
+                    <rect class="wv" x="80"  y="7"  width="4" height="26" rx="2"/>
+                    <rect class="wv" x="88"  y="15" width="4" height="10" rx="2"/>
+                    <rect class="wv" x="96"  y="9"  width="4" height="22" rx="2"/>
+                    <rect class="wv" x="104" y="5"  width="4" height="30" rx="2"/>
+                    <rect class="wv" x="112" y="12" width="4" height="16" rx="2"/>
+                    <rect class="wv" x="120" y="8"  width="4" height="24" rx="2"/>
+                    <rect class="wv" x="128" y="14" width="4" height="12" rx="2"/>
+                    <rect class="wv" x="136" y="6"  width="4" height="28" rx="2"/>
+                    <rect class="wv" x="144" y="10" width="4" height="20" rx="2"/>
+                    <rect class="wv" x="152" y="15" width="4" height="10" rx="2"/>
+                    <rect class="wv" x="160" y="7"  width="4" height="26" rx="2"/>
+                    <rect class="wv" x="168" y="11" width="4" height="18" rx="2"/>
+                    <rect class="wv" x="176" y="4"  width="4" height="32" rx="2"/>
+                    <rect class="wv" x="184" y="13" width="4" height="14" rx="2"/>
+                    <rect class="wv" x="192" y="9"  width="4" height="22" rx="2"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Language Selection Panel -->
+        <div class="container language-panel fade-in">
+
+            <!-- MOOD HISTORY -->
+            <div id="mood-history-section" class="mood-history-section" style="display:none;">
+                <h3 class="section-label">Recent Moods 🕐</h3>
+                <div id="mood-history-list" class="mood-history-list"></div>
+            </div>
+
+            <div class="panel-header">
+                <h2 class="panel-title">Choose Your Language 🌍</h2>
+                <p class="panel-sub">Select one or more languages for your music recommendations</p>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="language-search" class="search-input" placeholder="Search languages..." autocomplete="off">
+            </div>
+
+            <!-- LANGUAGE CHIPS -->
+            <div id="language-chips" class="language-chips"></div>
+
+            <!-- NEXT BUTTON -->
+            <div class="action-row">
+                <button id="btn-next-mood" class="btn btn-primary" disabled>Next →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ SCREEN 2: MOOD ═══════════ -->
+    <section id="screen-mood" class="screen">
+        <!-- Orbs follow through -->
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-cyan"></div>
+
+        <div class="container fade-in">
+            <div class="panel-header centered">
+                <h1 class="screen-title">How Are You Feeling? 🎭</h1>
+                <p class="screen-subtitle">Pick a mood and we'll find the perfect tracks</p>
+            </div>
+
+            <div id="mood-grid" class="mood-grid"></div>
+
+            <div class="action-row">
+                <button id="btn-back-lang" class="btn btn-secondary" type="button">← Back</button>
+                <button id="btn-find-music" class="btn btn-primary" disabled>Find My Music 🎵</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ SCREEN 3: RESULTS ═══════════ -->
+    <section id="screen-results" class="screen">
+        <div class="container fade-in">
+
+            <!-- TOP BAR -->
+            <div id="results-top-bar" class="results-top-bar">
+                <div class="results-info" id="results-info"></div>
+                <div class="results-actions">
+                    <button id="btn-shuffle"     class="btn btn-small" type="button">Shuffle 🔀</button>
+                    <button id="btn-change-mood" class="btn btn-small" type="button">Change Mood 🎭</button>
+                    <button id="btn-back-main"   class="btn btn-small" type="button">🏠 Home</button>
+                    <button id="btn-favourites"  class="btn btn-small btn-fav" type="button">❤️ Favourites (<span id="fav-count">0</span>)</button>
+                </div>
+            </div>
+
+            <!-- RECENTLY PLAYED -->
+            <div id="recently-played-section" class="recently-played-section" style="display:none;">
+                <h3 class="section-label">Recently Played 🕐</h3>
+                <div id="recently-played-list" class="recently-played-list"></div>
+            </div>
+
+            <!-- RESULTS GRID -->
+            <div id="results-grid" class="results-grid"></div>
+
+            <!-- STATES -->
+            <div id="results-empty" class="results-empty" style="display:none;">
+                <div class="empty-illustration">🎵</div>
+                <h2>No results found</h2>
+                <p>Try a different mood or language combination</p>
+                <button class="btn btn-primary" onclick="goBackToMood()">Try Again</button>
+            </div>
+
+            <div id="results-error" class="results-error" style="display:none;">
+                <div class="empty-illustration">⚠️</div>
+                <h2>Something went wrong</h2>
+                <p>We couldn't fetch music right now</p>
+                <button class="btn btn-primary" id="btn-retry">Retry</button>
+            </div>
+
+            <div id="favourites-empty" class="results-empty" style="display:none;">
+                <div class="empty-illustration">💔</div>
+                <h2>No favourites yet</h2>
+                <p>Tap the heart on songs you love to save them here</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ MINI PLAYER BAR ═══════════ -->
+    <div id="player-bar" class="player-bar">
+        <div class="player-bar-inner">
+            <img id="player-art" class="player-art" src="" alt="Album art">
+            <div class="player-info">
+                <span id="player-song"   class="player-song"></span>
+                <span id="player-artist" class="player-artist"></span>
+            </div>
+            <button id="player-play-pause" class="player-btn" type="button">⏸️</button>
+            <div class="player-progress-wrap">
+                <div class="player-progress-bar">
+                    <div id="player-progress" class="player-progress"></div>
+                </div>
+            </div>
+            <button id="player-close" class="player-btn player-close-btn" type="button">✕</button>
+        </div>
+    </div>
+
+    <!-- ═══════════ TOAST ═══════════ -->
+    <div id="toast" class="toast"></div>
+
+    <script src="config.js"></script>
+    <script src="emotion-vectors.js"></script>
+    <script src="engine.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
