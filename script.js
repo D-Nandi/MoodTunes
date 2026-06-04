@@ -6,6 +6,8 @@ let currentAudio = null;
 let progressInterval = null;
 let previewTimeout = null;
 let showingFavourites = false;
+let _previewToken = 0;           // incremented on every new preview request
+let _previewAbortCtrl = null;    // AbortController for in-flight fetches
 
 /* ===== DATA ===== */
 const LANGUAGES = [
@@ -1473,52 +1475,137 @@ function showToast(message) {
 }
 
 /* ===== AUDIO PREVIEW ===== */
+
+/*
+ * fetchPreviewUrl — races ALL sources simultaneously and returns the
+ * first URL that resolves. Typical response time: ~600–1200 ms.
+ * Sources raced in parallel:
+ *   • iTunes  (direct, no proxy — fastest and most reliable)
+ *   • Deezer via corsproxy.io
+ *   • Deezer via allorigins.win
+ */
+async function fetchPreviewUrl(artistName, songName, signal) {
+    const q        = encodeURIComponent(`${artistName} ${songName}`);
+    const deezerU  = `https://api.deezer.com/search?q=${q}&limit=5`;
+
+    const parseDeezer = async (res) => {
+        if (!res.ok) return Promise.reject('bad response');
+        let raw = await res.json();
+        if (raw.contents) raw = JSON.parse(raw.contents); // allorigins wrapper
+        const t = (raw.data || []).find(t => t.preview);
+        return t ? t.preview : Promise.reject('no preview');
+    };
+
+    const sources = [
+        // 1. iTunes — direct call, no CORS issue, returns .m4a previews
+        fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=5`, { signal })
+            .then(r => r.ok ? r.json() : Promise.reject('itunes fail'))
+            .then(d => {
+                const r = (d.results || []).find(r => r.previewUrl);
+                return r ? r.previewUrl : Promise.reject('no itunes preview');
+            }),
+
+        // 2. Deezer via corsproxy.io
+        fetch(`https://corsproxy.io/?${encodeURIComponent(deezerU)}`, { signal })
+            .then(parseDeezer),
+
+        // 3. Deezer via allorigins
+        fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(deezerU)}`, { signal })
+            .then(parseDeezer),
+    ];
+
+    // Promise.any: resolves with the first success, rejects only if ALL fail
+    return Promise.any(sources);
+}
+
 async function previewSong(songName, artistName, imageUrl) {
+    // ── 1. Kill any previous request & audio immediately ──────────────────
+    if (_previewAbortCtrl) _previewAbortCtrl.abort();
     stopPreview();
     clearActiveCards();
 
+    // ── 2. Mint a fresh token for this request ────────────────────────────
+    const token       = ++_previewToken;
+    _previewAbortCtrl = new AbortController();
+    const { signal }  = _previewAbortCtrl;
+
+    // ── 3. INSTANT UI — show YouTube bar right now, zero wait ─────────────
+    //    User gets immediate feedback. If audio is found below, we upgrade.
+    showYouTubeFallback(songName, artistName, imageUrl);
+    markActiveCard(songName, artistName);
+    saveRecentlyPlayed({ name: songName, artist: artistName, image: imageUrl });
+    loadRecentlyPlayed();
+
+    // ── 4. Race audio sources in the background (max 5 s) ─────────────────
+    //    Auto-abort after 5 s so we don't hang forever.
+    const autoAbortId = setTimeout(() => {
+        if (token === _previewToken) _previewAbortCtrl?.abort();
+    }, 5000);
+
     try {
-        const query = encodeURIComponent(`${artistName} ${songName}`);
-        const res = await fetch(`https://corsproxy.io/?https://api.deezer.com/search?q=${query}`);
-        const data = await res.json();
-        if (!data.data || data.data.length === 0 || !data.data[0].preview) {
-            showToast("No preview available 😔");
-            return;
-        }
-        const previewUrl = data.data[0].preview;
+        const previewUrl = await fetchPreviewUrl(artistName, songName, signal);
+        clearTimeout(autoAbortId);
+
+        // If a newer click happened while we were fetching, bail out silently
+        if (token !== _previewToken) return;
+
+        // ── 5. Audio found! Upgrade bar from YouTube mode → audio mode ────
         currentAudio = new Audio(previewUrl);
         currentAudio.volume = 0.7;
-        currentAudio.play();
 
-        // Engine: record play event for personalization learning
+        const playPromise = currentAudio.play();
+
+        // Swap the bar to audio-player mode
+        const bar = document.getElementById('player-bar');
+        bar.classList.remove('youtube-mode');
+        document.getElementById('player-play-pause').textContent = '⏸️';
+        document.getElementById('player-progress').style.width = '0%';
+
         const playedTrack = currentTracks.find(
             t => t.name === songName && t.artist === artistName
-        ) || { name: songName, artist: artistName, _language: selectedLanguages[0] || "" };
+        ) || { name: songName, artist: artistName, _language: selectedLanguages[0] || '' };
         MoodEngine.onPlay(playedTrack, selectedMood);
 
-        showPlayerBar({ name: songName, artist: artistName, image: imageUrl });
-        markActiveCard(songName, artistName);
-        saveRecentlyPlayed({ name: songName, artist: artistName, image: imageUrl });
-        loadRecentlyPlayed();
-
         progressInterval = setInterval(updateProgressBar, 500);
-        currentAudio.addEventListener("ended", () => {
-            // Engine: record completion for learning
+        currentAudio.addEventListener('ended', () => {
+            if (token !== _previewToken) return;
             MoodEngine.onComplete(
-                playedTrack,
-                selectedMood,
+                playedTrack, selectedMood,
                 currentAudio ? Math.round(currentAudio.duration * 1000) : 0
             );
             stopPreview();
             hidePlayerBar();
             clearActiveCards();
         });
-    } catch {
-        showToast("Preview failed ⚠️");
+
+        // If browser blocks autoplay, quietly revert to YouTube mode
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                if (token !== _previewToken) return;
+                if (currentAudio) { currentAudio.src = ''; currentAudio = null; }
+                document.getElementById('player-bar').classList.add('youtube-mode');
+            });
+        }
+
+    } catch (err) {
+        clearTimeout(autoAbortId);
+        // AbortError = user closed / clicked new song / 5 s timeout
+        // AggregateError = all sources failed
+        // Either way, the YouTube bar is already visible — nothing more to do.
+        // Only hide if a newer request is already in charge.
+        if (token !== _previewToken) hidePlayerBar();
     }
 }
 
+
 function stopPreview() {
+    // Abort any in-flight network request immediately
+    if (_previewAbortCtrl) {
+        _previewAbortCtrl.abort();
+        _previewAbortCtrl = null;
+    }
+    // Increment token so any already-resolved-but-not-yet-played fetch is dropped
+    _previewToken++;
     if (currentAudio) {
         currentAudio.pause();
         currentAudio.src = "";
@@ -1593,6 +1680,8 @@ function loadRecentlyPlayed() {
 /* ===== PLAYER BAR ===== */
 function showPlayerBar(song) {
     const bar = document.getElementById("player-bar");
+    // Clear any leftover youtube-mode from a previous fallback
+    bar.classList.remove("youtube-mode");
     document.getElementById("player-art").src = song.image || "";
     document.getElementById("player-song").textContent = song.name;
     document.getElementById("player-artist").textContent = song.artist;
@@ -1602,7 +1691,23 @@ function showPlayerBar(song) {
     document.body.classList.add("player-active");
 }
 
+function showYouTubeFallback(songName, artistName, imageUrl) {
+    const bar    = document.getElementById("player-bar");
+    const ytBtn  = document.getElementById("player-yt-btn");
+    const query  = encodeURIComponent(`${artistName} - ${songName}`);
+    ytBtn.href   = `https://www.youtube.com/results?search_query=${query}`;
+
+    bar.classList.remove("youtube-mode");  // reset first for clean animation
+    document.getElementById("player-art").src            = imageUrl || "";
+    document.getElementById("player-song").textContent   = songName;
+    document.getElementById("player-artist").textContent = artistName;
+    document.getElementById("player-progress").style.width = "0%";
+    bar.classList.add("visible", "youtube-mode");
+    document.body.classList.add("player-active");
+}
+
 function hidePlayerBar() {
-    document.getElementById("player-bar").classList.remove("visible");
+    const bar = document.getElementById("player-bar");
+    bar.classList.remove("visible", "youtube-mode");
     document.body.classList.remove("player-active");
 }
