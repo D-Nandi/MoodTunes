@@ -2157,3 +2157,52 @@ body.player-active { padding-bottom: var(--player-height); }
     .mood-ambient-blob-2 { width: 240px; height: 240px; filter: blur(52px); }
     .mood-ambient-blob-3 { width: 200px; height: 200px; filter: blur(58px); }
 }
+
+/* ════════════════════════════════════════
+   PLAYER BAR — YOUTUBE FALLBACK MODE
+════════════════════════════════════════ */
+
+/* The YouTube button itself — hidden by default */
+.player-yt-btn {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    background: #FF0000;
+    color: #fff;
+    text-decoration: none;
+    font-family: var(--font-main);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 8px 16px;
+    border-radius: 50px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        transform   0.2s cubic-bezier(0.22,1,0.36,1),
+        box-shadow  0.2s ease,
+        filter      0.2s ease;
+    animation: ytPulse 2.4s ease-in-out infinite;
+}
+
+.player-yt-btn:hover {
+    transform: scale(1.07);
+    filter: brightness(1.15);
+    box-shadow: 0 0 24px rgba(255, 0, 0, 0.6);
+    animation: none;
+}
+
+.player-yt-btn svg {
+    flex-shrink: 0;
+}
+
+@keyframes ytPulse {
+    0%, 100% { box-shadow: 0 0 0   0   rgba(255,0,0,0.0); }
+    50%       { box-shadow: 0 0 18px 4px rgba(255,0,0,0.40); }
+}
+
+/* In youtube-mode: swap audio controls for YT button */
+.player-bar.youtube-mode #player-play-pause    { display: none; }
+.player-bar.youtube-mode #player-progress-wrap { display: none; }
+.player-bar.youtube-mode .player-yt-btn        { display: flex; }
